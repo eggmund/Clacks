@@ -1,8 +1,9 @@
-use nannou::draw::Draw;
-use nannou::color::named::*;
+use ggez::graphics::{self, Mesh, DrawMode, DrawParam, Rect};
+use ggez::{Context, GameResult};
 
-use crate::FLOOR_HEIGHT;
+use crate::FLOOR_POS;
 
+#[derive(Default)]
 pub struct Block {
     pub pos: f64,       // One dimensional
     pub vel: f64,
@@ -20,11 +21,19 @@ impl Block {
         }
     }
 
-    pub fn display(&self, draw: &Draw) {
-        draw.rect()
-            .x_y(self.pos as f32, FLOOR_HEIGHT + self.size/2.0)
-            .w_h(self.size, self.size)
-            .color(RED);
+    pub fn draw(&self, ctx: &mut Context) -> GameResult {
+        let sqr = Mesh::new_rectangle(
+            ctx,
+            DrawMode::fill(),
+            Rect::new(0.0, 0.0, self.size, self.size),
+            [1.0, 0.0, 0.1, 1.0].into()
+        )?;
+        
+        graphics::draw(ctx, &sqr,
+            DrawParam::default()
+                .dest([self.pos as f32, FLOOR_POS - self.size])
+        )?;
+        Ok(())
     }
 
     #[inline]
@@ -39,8 +48,9 @@ impl Block {
         new_vel
     }
 
-    pub fn hit_wall(&mut self, half_screen_w: f32) -> bool {
-        if self.pos - self.size as f64/2.0 <= -half_screen_w as f64 {
+    // Only works on left side of block
+    pub fn hit_wall(&mut self, wall_pos: f64) -> bool {
+        if self.pos <= wall_pos {
             self.vel = -self.vel;
             return true
         }
